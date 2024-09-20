@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentInput += digit;
         }
         updateDisplay();
+        historyDisplay.textContent = '';
     }
 
     function inputDecimal() {
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentInput += '.';
         }
         updateDisplay();
+        historyDisplay.textContent = '';
     }
 
     function toggleSign() {
@@ -60,11 +62,19 @@ document.addEventListener('DOMContentLoaded', function() {
         operator = nextOperator; // Update operator
         waitingForSecondOperand = true; // Indicate we're waiting for the next number
 
-        // Update display to show current operation
+        // Update display to show the current operation
         display.textContent = `${firstOperand} ${operator}`; // Show the operation on display
+        historyDisplay.textContent = '';
     }
 
     function performCalculation(firstOperand, secondOperand, operator) {
+        // Check if operands are numbers (including checking for null or undefined)
+        if (firstOperand == null || secondOperand == null || 
+            typeof firstOperand !== 'number' || typeof secondOperand !== 'number') {
+            alert("Operands must be numbers");
+            return 'Error';
+        }
+
         switch (operator) {
             case '+':
                 return firstOperand + secondOperand;
@@ -73,9 +83,14 @@ document.addEventListener('DOMContentLoaded', function() {
             case '×':
                 return firstOperand * secondOperand;
             case '÷':
-                return secondOperand === 0 ? 'Error' : firstOperand / secondOperand;
+                if (secondOperand === 0) {
+                    alert("Can't divide by 0");
+                    return 'Error';
+                } else {
+                    return firstOperand / secondOperand;
+                }
             default:
-                return secondOperand;
+                return null; // Return null for unsupported operators
         }
     }
 
@@ -87,32 +102,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputValue = parseFloat(currentInput);
         const result = performCalculation(firstOperand, inputValue, operator);
         currentInput = `${parseFloat(result.toFixed(7))}`;
-        historyDisplay.textContent = `${firstOperand} ${operator} ${inputValue}`; // Just show the operation
+        historyDisplay.textContent = `${firstOperand} ${operator} ${inputValue}`; // Show the operation
         firstOperand = null;
         operator = null;
         waitingForSecondOperand = true;
         updateDisplay();
     }
 
-    function memoryOperation(operation) {
-        switch (operation) {
-            case 'M+':
-                memory += parseFloat(currentInput);
-                break;
-            case 'M-':
-                memory -= parseFloat(currentInput);
-                break;
-            case 'MR':
-                currentInput = memory.toString();
-                updateDisplay();
-                break;
-            case 'MC':
-                memory = 0;
-                break;
-        }
-    }
-
-    // Event listeners for each key
     document.querySelectorAll('.key').forEach(key => {
         key.addEventListener('click', function() {
             const keyValue = key.textContent;
@@ -135,22 +131,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
                 case '÷':
                 case '×':
-                case '−':
+                case '-':
                 case '+':
                     handleOperator(keyValue);
-                    // Show both the first operand and operator in display
-                    display.textContent = `${firstOperand} ${operator}`;
-                    break;
-                case 'M+':
-                case 'M-':
-                case 'MR':
-                case 'MC':
-                    memoryOperation(keyValue);
                     break;
                 default:
                     if (Number.isInteger(parseFloat(keyValue))) {
                         inputDigit(keyValue);
-                        // Update the display to show current input with the first operand and operator
+                        // Update display to show current operation
                         if (operator) {
                             display.textContent = `${firstOperand} ${operator} ${currentInput}`;
                         }
